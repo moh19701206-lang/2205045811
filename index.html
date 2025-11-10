@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decentralized dApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Decentralized dApp</h1>
+        <p>Connect your MetaMask wallet to interact with this dApp</p>
+        
+        <div id="status" class="status disconnected">
+            Not connected to MetaMask
+        </div>
+        
+        <div id="warning" class="status warning" style="display: none;">
+            MetaMask not detected. Please install MetaMask first.
+        </div>
+        
+        <button id="connectButton" class="button">Connect MetaMask</button>
+        <button id="actionButton" class="button" disabled>Execute Action</button>
+        <button id="getAccountButton" class="button" disabled>Get Account</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let ethereum = window.ethereum;
+
+        function checkMetaMask() {
+            if (typeof ethereum === 'undefined') {
+                document.getElementById('warning').style.display = 'block';
+                document.getElementById('connectButton').disabled = true;
+                document.getElementById('status').innerHTML = 'MetaMask not available';
+                return false;
+            }
+            return true;
+        }
+
+        document.getElementById('connectButton').onclick = async function() {
+            if (!checkMetaMask()) return;
+
+            try {
+                const accounts = await ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                document.getElementById('status').innerHTML = `Connected: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`;
+                document.getElementById('status').className = 'status connected';
+                
+                document.getElementById('actionButton').disabled = false;
+                document.getElementById('getAccountButton').disabled = false;
+                document.getElementById('connectButton').disabled = true;
+                document.getElementById('warning').style.display = 'none';
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = 'Connection failed: ' + error.message;
+                document.getElementById('status').className = 'status disconnected';
+            }
+        };
+
+        document.getElementById('getAccountButton').onclick = async function() {
+            if (!checkMetaMask()) return;
+
+            try {
+                const accounts = await ethereum.request({ 
+                    method: 'eth_accounts' 
+                });
+                if (accounts.length > 0) {
+                    document.getElementById('result').innerHTML = `<p>Current Account: ${accounts[0]}</p>`;
+                } else {
+                    document.getElementById('result').innerHTML = `<p>No accounts found. Please connect first.</p>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        };
+
+        document.getElementById('actionButton').onclick = function() {
+            document.getElementById('result').innerHTML = '<p>Action executed successfully!</p>';
+        };
+
+        if (typeof ethereum !== 'undefined') {
+            ethereum.on('accountsChanged', function(accounts) {
+                if (accounts.length === 0) {
+                    document.getElementById('status').innerHTML = 'Disconnected';
+                    document.getElementById('status').className = 'status disconnected';
+                    document.getElementById('actionButton').disabled = true;
+                    document.getElementById('getAccountButton').disabled = true;
+                    document.getElementById('connectButton').disabled = false;
+                } else {
+                    document.getElementById('status').innerHTML = `Connected: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`;
+                    document.getElementById('status').className = 'status connected';
+                }
+            });
+        }
+
+        checkMetaMask();
+    </script>
+</body>
+</html>
