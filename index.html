@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق dApp اللامركزي</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تطبيق dApp اللامركزي</h1>
+        <p>هذا تطبيق لامركزي يمكن الاتصال بمحفظة MetaMask</p>
+        
+        <div id="status" class="status disconnected">
+            غير متصل بـ MetaMask
+        </div>
+        
+        <button id="connectButton" class="button">الاتصال بـ MetaMask</button>
+        <button id="actionButton" class="button" disabled>تنفيذ إجراء</button>
+        <button id="getAccountButton" class="button" disabled>الحصول على الحساب</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // التحقق من وجود MetaMask
+        if (typeof window.ethereum === 'undefined') {
+            document.getElementById('status').innerHTML = 'MetaMask غير مثبت. يرجى تثبيته أولاً.';
+            document.getElementById('status').className = 'status disconnected';
+        } else {
+            document.getElementById('status').innerHTML = 'MetaMask موجود. يمكنك الاتصال الآن.';
+        }
+
+        // زر الاتصال بـ MetaMask
+        document.getElementById('connectButton').onclick = async function() {
+            try {
+                // طلب الوصول إلى الحسابات
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                document.getElementById('status').innerHTML = `متصل: ${accounts[0]}`;
+                document.getElementById('status').className = 'status connected';
+                
+                // تمكين الأزرار الأخرى
+                document.getElementById('actionButton').disabled = false;
+                document.getElementById('getAccountButton').disabled = false;
+                document.getElementById('connectButton').disabled = true;
+                
+            } catch (error) {
+                console.error(error);
+                document.getElementById('status').innerHTML = 'فشل الاتصال: ' + error.message;
+                document.getElementById('status').className = 'status disconnected';
+            }
+        };
+
+        // زر الحصول على الحساب
+        document.getElementById('getAccountButton').onclick = async function() {
+            try {
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_accounts' 
+                });
+                document.getElementById('result').innerHTML = `<p>الحساب الحالي: ${accounts[0]}</p>`;
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').innerHTML = `<p>خطأ: ${error.message}</p>`;
+            }
+        };
+
+        // زر تنفيذ إجراء
+        document.getElementById('actionButton').onclick = function() {
+            document.getElementById('result').innerHTML = '<p>تم تنفيذ الإجراء بنجاح!</p>';
+        };
+
+        // الاستماع لتغييرات الحساب
+        window.ethereum.on('accountsChanged', function(accounts) {
+            if (accounts.length === 0) {
+                document.getElementById('status').innerHTML = 'غير متصل';
+                document.getElementById('status').className = 'status disconnected';
+                document.getElementById('actionButton').disabled = true;
+                document.getElementById('getAccountButton').disabled = true;
+                document.getElementById('connectButton').disabled = false;
+            } else {
+                document.getElementById('status').innerHTML = `متصل: ${accounts[0]}`;
+                document.getElementById('status').className = 'status connected';
+            }
+        });
+    </script>
+</body>
+</html>
